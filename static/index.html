@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Deepgram TTS UI</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Deepgram TTS</h1>
+
+      <div class="card">
+        <div class="row">
+          <div class="col">
+            <label for="arch">Architecture</label>
+            <select id="arch"></select>
+          </div>
+          <div class="col">
+            <label for="lang">Language</label>
+            <select id="lang"></select>
+          </div>
+          <div class="col">
+            <label for="acc">Accent</label>
+            <select id="acc"></select>
+          </div>
+          <div class="col">
+            <label for="gender">Gender</label>
+            <select id="gender">
+              <option value="">Any</option>
+              <option value="masculine">Masculine</option>
+              <option value="feminine">Feminine</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col">
+            <label for="voice">Voice</label>
+            <select id="voice"></select>
+          </div>
+          <div class="col" style="max-width: 220px;">
+            <label>&nbsp;</label>
+            <button id="load-voices">Find Voices</button>
+          </div>
+          <div class="col" style="max-width: 220px;">
+            <label>&nbsp;</label>
+            <a id="voice-sample" href="#" target="_blank" class="hidden">Preview Sample</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <label for="text">Text</label>
+        <textarea id="text" rows="6" placeholder="Type something to synthesize..."></textarea>
+
+        <div class="row"></div>
+
+        <button id="speak">Speak</button>
+      </div>
+
+      <div class="card">
+        <button id="advanced-toggle" class="accordion-toggle">Advanced settings</button>
+        <div id="advanced" class="accordion-content hidden">
+          <div class="row">
+            <div class="col">
+              <label for="endpoint">Backend Base URL</label>
+              <input id="endpoint" type="text" placeholder="http://localhost:8000" />
+              <small>Requests go to <code>{base}/api/*</code>. Defaults to current origin.</small>
+            </div>
+            <div class="col">
+              <label for="deepgram_api_url">Deepgram API URL</label>
+              <input id="deepgram_api_url" type="text" placeholder="https://api.deepgram.com" />
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <label for="model">Model</label>
+              <input id="model" type="text" value="aura-2-thalia-en" />
+            </div>
+            <div class="col">
+              <label for="encoding">Encoding</label>
+              <select id="encoding" disabled>
+                <option value="linear16" selected>linear16 (WAV PCM)</option>
+              </select>
+            </div>
+            <div class="col">
+              <label for="rate">Sample Rate</label>
+              <input id="rate" type="number" value="16000" min="8000" step="1000" />
+            </div>
+            <div class="col"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <audio id="player" controls></audio>
+        <div class="row">
+          <a id="download" href="#" download="tts.wav" class="hidden">Download WAV</a>
+          <span id="status"></span>
+        </div>
+      </div>
+
+      <footer>
+        <small>Deepgram TTS UI</small>
+      </footer>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

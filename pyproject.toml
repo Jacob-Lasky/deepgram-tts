@@ -1,0 +1,14 @@
+[project]
+name = "deepgram-tts-ui"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+  "deepgram-sdk",
+  "python-dotenv",
+  "fastapi",
+  "uvicorn[standard]"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
