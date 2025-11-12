@@ -9,7 +9,7 @@ import logging
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel, Field
 from starlette.staticfiles import StaticFiles
 
@@ -270,6 +270,31 @@ def get_config():
         "deepgram_api_url": DEEPGRAM_API_URL,
         "deepgram_auth_scheme": DEEPGRAM_AUTH_SCHEME,
     }
+
+
+@app.get("/api/model/{model_id}")
+def get_model(model_id: str, api_url: Optional[str] = None):
+    api_key = os.getenv("DEEPGRAM_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(
+            status_code=500, detail="Missing DEEPGRAM_API_KEY in environment or .env"
+        )
+
+    base = "https://api.deepgram.com"
+    # model_id may be a UUID or canonical name; encode safely for URL path
+    url = f"{base}/v1/models/{urllib.parse.quote(model_id)}"
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"Authorization": f"{DEEPGRAM_AUTH_SCHEME} {api_key}"},
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return JSONResponse(content=data)
+    except Exception as e:
+        raise HTTPException(
+            status_code=502, detail=f"Failed to fetch model metadata: {e}"
+        )
 
 
 # Serve static UI

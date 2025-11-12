@@ -231,18 +231,47 @@
       };
       if (metaEl) {
         const rows = [
+          ["Error", dgMeta.error],
           ["Speak URL", dgMeta.speakUrl],
           ["Text", text],
+          ["Characters", dgMeta.charCount],
+          ["Project", dgMeta.projectId],
           ["Request ID", dgMeta.requestId],
           ["Model", dgMeta.modelName],
           ["Model UUID", dgMeta.modelUuid],
-          ["Characters", dgMeta.charCount],
-          ["Project", dgMeta.projectId],
-          ["Error", dgMeta.error],
         ].filter(([, v]) => v && String(v).trim() !== "");
         metaEl.innerHTML = rows.length
           ? `<ul>${rows.map(([k,v]) => `<li><strong>${k}:</strong> ${v}</li>`).join("")}</ul>`
           : "";
+
+        // Fetch and render model metadata under the Model UUID
+        const modelId = dgMeta.modelUuid || "";
+        const apiBase = deepgramBaseUrl();
+        if (modelId) {
+          const detailsUrl = `${baseUrl()}/api/model/${encodeURIComponent(modelId)}?${new URLSearchParams({ api_url: apiBase }).toString()}`;
+          fetch(detailsUrl)
+            .then(r => r.ok ? r.json() : Promise.reject(new Error(`Model meta ${r.status}`)))
+            .then((md) => {
+              // Try to pull useful fields
+              const name = md?.name || md?.canonical_name || "";
+              const arch = md?.architecture || "";
+              const langs = Array.isArray(md?.languages) ? md.languages.join(", ") : "";
+              const version = md?.version || "";
+
+              const rows2 = [
+                ["Model Name", name],
+                ["Architecture", arch],
+                ["Languages", langs],
+                ["Version", version],
+              ].filter(([, v]) => v && String(v).trim() !== "");
+
+              if (rows2.length) {
+                const html = `<div class="meta-sub"><strong>Model details</strong><ul>${rows2.map(([k,v]) => `<li><strong>${k}:</strong> ${v}</li>`).join("")}</ul></div>`;
+                metaEl.innerHTML += html;
+              }
+            })
+            .catch(() => { /* ignore model meta errors in UI */ });
+        }
       }
       console.info("Deepgram metadata", dgMeta);
 
