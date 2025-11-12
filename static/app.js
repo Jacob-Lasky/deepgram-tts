@@ -9,6 +9,7 @@
   const player = $("#player");
   const download = $("#download");
   const status = $("#status");
+  const metaEl = $("#meta");
 
   // Voice filters & selection
   const archInput = $("#arch");
@@ -218,6 +219,32 @@
         const errText = await res.text();
         throw new Error(`${res.status} ${res.statusText} - ${errText}`);
       }
+
+      const dgMeta = {
+        requestId: res.headers.get("dg-request-id"),
+        modelName: res.headers.get("dg-model-name"),
+        modelUuid: res.headers.get("dg-model-uuid"),
+        charCount: res.headers.get("dg-char-count"),
+        projectId: res.headers.get("dg-project-id"),
+        error: res.headers.get("dg-error"),
+        speakUrl: res.headers.get("dg-speak-url"),
+      };
+      if (metaEl) {
+        const rows = [
+          ["Speak URL", dgMeta.speakUrl],
+          ["Text", text],
+          ["Request ID", dgMeta.requestId],
+          ["Model", dgMeta.modelName],
+          ["Model UUID", dgMeta.modelUuid],
+          ["Characters", dgMeta.charCount],
+          ["Project", dgMeta.projectId],
+          ["Error", dgMeta.error],
+        ].filter(([, v]) => v && String(v).trim() !== "");
+        metaEl.innerHTML = rows.length
+          ? `<ul>${rows.map(([k,v]) => `<li><strong>${k}:</strong> ${v}</li>`).join("")}</ul>`
+          : "";
+      }
+      console.info("Deepgram metadata", dgMeta);
 
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);

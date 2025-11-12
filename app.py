@@ -55,6 +55,15 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "dg-request-id",
+        "dg-model-name",
+        "dg-model-uuid",
+        "dg-char-count",
+        "dg-project-id",
+        "dg-error",
+        "dg-speak-url",
+    ],
 )
 
 
@@ -91,7 +100,7 @@ def tts(req: TTSRequest, api_url: Optional[str] = None):
         params["sample_rate"] = str(req.sample_rate)
     query = urllib.parse.urlencode(params)
     url = f"{base}/v1/speak?{query}"
-    logger.info(f"TTS request: {url}")
+    logger.info(f"\nTTS request: {url}\n")
 
     payload = json.dumps({"text": req.text}).encode("utf-8")
     headers = {
@@ -103,6 +112,27 @@ def tts(req: TTSRequest, api_url: Optional[str] = None):
             url, data=payload, headers=headers, method="POST"
         )
         with urllib.request.urlopen(http_req, timeout=60) as resp:
+            # Capture metadata headers from Deepgram
+            hdrs = {k.lower(): v for k, v in resp.headers.items()}
+            dg_meta = {
+                "dg-request-id": hdrs.get("dg-request-id"),
+                "dg-model-name": hdrs.get("dg-model-name"),
+                "dg-model-uuid": hdrs.get("dg-model-uuid"),
+                "dg-char-count": hdrs.get("dg-char-count"),
+                "dg-project-id": hdrs.get("dg-project-id"),
+                "dg-error": hdrs.get("dg-error"),
+            }
+
+            # Log a concise metadata line
+            logger.info(
+                "\nDeepgram meta rid=%s\n model=%s\n chars=%s\n project=%s\n error=%s\n",
+                dg_meta.get("dg-request-id"),
+                dg_meta.get("dg-model-name"),
+                dg_meta.get("dg-char-count"),
+                dg_meta.get("dg-project-id"),
+                dg_meta.get("dg-error"),
+            )
+
             content_type = resp.headers.get("Content-Type") or "audio/wav"
             audio = resp.read()
     except Exception as e:
@@ -110,11 +140,22 @@ def tts(req: TTSRequest, api_url: Optional[str] = None):
 
     # We forced linear16, return WAV filename
     filename = "tts.wav"
-    return Response(
-        content=audio,
-        media_type=content_type,
-        headers={"Content-Disposition": f"inline; filename={filename}"},
-    )
+    response_headers = {"Content-Disposition": f"inline; filename={filename}"}
+    # Echo Deepgram metadata headers so the browser can read them (CORS expose configured)
+    for key in (
+        "dg-request-id",
+        "dg-model-name",
+        "dg-model-uuid",
+        "dg-char-count",
+        "dg-project-id",
+        "dg-error",
+    ):
+        if locals().get("dg_meta") and dg_meta.get(key):
+            response_headers[key] = dg_meta[key]
+    # Also expose the exact Speak URL we hit
+    response_headers["dg-speak-url"] = url
+
+    return Response(content=audio, media_type=content_type, headers=response_headers)
 
 
 @app.get("/api/voices")
