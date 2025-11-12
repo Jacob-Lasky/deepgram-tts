@@ -37,6 +37,15 @@ except Exception as e:
     SpeakV1TextMessage = None  # type: ignore
 
 logger = logging.getLogger("deepgram-tts-ui")
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setLevel(logging.INFO)
+    _handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+    )
+    logger.addHandler(_handler)
+logger.setLevel(logging.INFO)
+logger.propagate = False
 app = FastAPI(title="Deepgram TTS UI")
 
 # CORS - permissive for testing across envs
@@ -83,6 +92,7 @@ def tts(req: TTSRequest, api_url: Optional[str] = None):
     query = urllib.parse.urlencode(params)
     url = f"{base}/v1/speak?{query}"
     logger.info(f"TTS request: {url}")
+    logging.getLogger("uvicorn.error").info("TTS request: %s", url)
 
     payload = json.dumps({"text": req.text}).encode("utf-8")
     headers = {
@@ -94,7 +104,7 @@ def tts(req: TTSRequest, api_url: Optional[str] = None):
             url, data=payload, headers=headers, method="POST"
         )
         with urllib.request.urlopen(http_req, timeout=60) as resp:
-            content_type = resp.headers.get("Content-Type") or "audio/mpeg"
+            content_type = resp.headers.get("Content-Type") or "audio/wav"
             audio = resp.read()
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"TTS request failed: {e}")
@@ -123,7 +133,7 @@ def list_voices(
         )
 
     try:
-        base = "https://api.deepgram.com"
+        base = "https://api.deepgram.com"  # where all voices live
         req = urllib.request.Request(
             f"{base}/v1/models",
             headers={"Authorization": f"{DEEPGRAM_AUTH_SCHEME} {api_key}"},
