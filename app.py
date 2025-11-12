@@ -92,7 +92,6 @@ def tts(req: TTSRequest, api_url: Optional[str] = None):
     query = urllib.parse.urlencode(params)
     url = f"{base}/v1/speak?{query}"
     logger.info(f"TTS request: {url}")
-    logging.getLogger("uvicorn.error").info("TTS request: %s", url)
 
     payload = json.dumps({"text": req.text}).encode("utf-8")
     headers = {
